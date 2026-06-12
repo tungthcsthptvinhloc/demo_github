@@ -1,0 +1,1694 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý thu BHYT (v7 - Gemini AI)</title>
+    
+    <!-- PHẦN CSS TẠO KIỂU DÁNG -->
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --danger-color: #dc3545;
+            --success-color: #28a745;
+            --info-color: #17a2b8;
+            --warning-color: #ffc107;
+            --light-gray: #f8f9fa;
+            --gray: #dee2e6;
+            --dark-gray: #6c757d;
+            /* Màu mới cho Gemini */
+            --gemini-color: #8e44ad; 
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--light-gray);
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        h1, h2 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--gray);
+            padding-bottom: 10px;
+        }
+        
+        /* Cập nhật H2 để chứa nút AI */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap; /* Cho phép wrap trên di động */
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.8rem;
+            margin: 15px;
+        }
+        
+        h2 {
+            font-size: 1.5rem;
+            border-bottom: none; /* Bỏ border ở H2 */
+            padding-bottom: 0;
+            margin: 0;
+        }
+        
+        /* Thêm border vào section-header */
+        #statistics .section-header {
+            border-bottom: 2px solid var(--gray);
+            padding-bottom: 10px;
+        }
+
+
+        .container {
+            max-width: 1400px; 
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 10px 20px 20px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin: 10px auto;
+        }
+
+        /* --- CẤU TRÚC TAB CHÍNH --- */
+        .tab-nav {
+            display: flex;
+            flex-wrap: wrap; 
+            border-bottom: 2px solid var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        .tab-link {
+            padding: 12px 18px;
+            cursor: pointer;
+            border: none;
+            background-color: transparent;
+            font-size: 1rem;
+            font-weight: bold;
+            color: var(--dark-gray);
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+        }
+
+        .tab-link:hover {
+            color: var(--primary-color);
+        }
+
+        .tab-link.active {
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+        }
+        
+        .tab-content {
+            display: none; 
+        }
+
+        .tab-content.active {
+            display: block; 
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        /* Cảnh báo dữ liệu */
+        #data-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        /* --- CẤU TRÚC MODAL (FORM LỚP HỌC) --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+        
+        .modal-content {
+            background-color: #fff;
+            padding: 25px 30px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 900px; /* Rộng hơn cho form 3 cột */
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        #modal-title {
+            margin-top: 0;
+        }
+        
+        /* Tùy chỉnh form quản lý lớp (trong modal) */
+        #class-form {
+            grid-template-columns: 1fr 1fr 1fr; /* 3 cột cho máy tính */
+            gap: 20px;
+        }
+
+        #class-form .form-group {
+            display: flex;
+            flex-direction: column; 
+            gap: 5px;
+        }
+        
+        #class-form .form-group-full {
+            grid-column: 1 / -1; 
+        }
+        
+        #class-form .button-group {
+            grid-column: 1 / -1;
+        }
+
+        /* --- CẤU TRÚC MODAL GEMINI (MỚI) --- */
+        .gemini-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1050; /* Cao hơn modal lớp */
+            padding: 15px;
+            box-sizing: border-box;
+        }
+        
+        .gemini-modal-content {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .gemini-modal-content h3 {
+            margin-top: 0;
+            color: var(--gemini-color);
+        }
+        
+        .gemini-modal-body {
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .gemini-modal-body textarea {
+            width: 100%;
+            height: 250px;
+            box-sizing: border-box;
+            border: 1px solid var(--gray);
+            border-radius: 5px;
+            padding: 10px;
+            font-size: 1rem;
+            resize: vertical;
+        }
+        
+        .gemini-modal-footer {
+            text-align: right;
+            margin-top: 15px;
+        }
+
+        /* --- LOADING OVERLAY (MỚI) --- */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1100; /* Cao nhất */
+        }
+        
+        .spinner {
+            border: 8px solid var(--light-gray);
+            border-top: 8px solid var(--gemini-color);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* --- CÁC THÀNH PHẦN CHUNG --- */
+        section {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid var(--gray);
+        }
+
+        form {
+            display: grid;
+            gap: 15px;
+        }
+
+        /* Form nộp tiền */
+        #submission-form {
+            max-width: 600px;
+        }
+        
+        #submission-form div {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        #submission-form .form-group-split {
+             flex-direction: row;
+             gap: 10px;
+        }
+        #submission-form .form-group-split input {
+             flex: 1;
+        }
+
+        form label {
+            font-weight: bold;
+            text-align: left;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--gray);
+            border-radius: 5px;
+            box-sizing: border-box; 
+            font-size: 1rem;
+        }
+
+        input[disabled] {
+            background-color: var(--light-gray);
+            cursor: not-allowed;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        #btn-show-add-modal {
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-success { background-color: var(--success-color); color: white; }
+        .btn-secondary { background-color: var(--dark-gray); color: white; }
+        .btn-danger { background-color: var(--danger-color); color: white; }
+        .btn-info { background-color: var(--info-color); color: white; }
+        .btn-primary:hover, .btn-success:hover, .btn-secondary:hover, .btn-danger:hover, .btn-info:hover { opacity: 0.9; }
+
+        /* Nút Gemini (MỚI) */
+        .btn-gemini {
+            background-color: var(--gemini-color);
+            color: white;
+            font-size: 13px;
+            padding: 8px 12px;
+        }
+        .btn-gemini:hover {
+            opacity: 0.9;
+        }
+        .stat-card .btn-gemini {
+            font-size: 12px;
+            padding: 6px 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .table-wrapper {
+            overflow-x: auto; 
+        }
+
+        th, td {
+            border: 1px solid var(--gray);
+            padding: 10px;
+            text-align: left;
+            vertical-align: top;
+            font-size: 13px;
+            white-space: nowrap; 
+        }
+        
+        td.col-notes {
+            white-space: normal;
+            min-width: 150px;
+        }
+
+        th {
+            background-color: var(--light-gray);
+            font-size: 14px;
+            position: sticky;
+            top: 0; 
+            z-index: 1;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #fdfdfd;
+        }
+
+        .action-buttons button {
+            padding: 5px 8px;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+
+        /* --- Kiểu cho TAB THỐNG KÊ (MỚI) --- */
+        .sub-tab-nav {
+            display: flex;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--gray);
+            margin-bottom: 20px;
+        }
+        
+        .sub-tab-link {
+            padding: 10px 15px;
+            cursor: pointer;
+            border: none;
+            background-color: transparent;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--dark-gray);
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+        }
+        
+        .sub-tab-link.active {
+            color: var(--primary-color);
+            font-weight: bold;
+            border-bottom-color: var(--primary-color);
+        }
+        
+        .sub-tab-content {
+            display: none;
+        }
+        
+        .sub-tab-content.active {
+            display: block;
+        }
+        
+        #custom-filter-controls {
+            background-color: var(--light-gray);
+            border: 1px solid var(--gray);
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        #custom-filter-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+        
+        #custom-filter-list div {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #fff;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid var(--gray);
+        }
+        #custom-filter-list label {
+            font-size: 14px;
+        }
+
+        .stats-container-inner {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-card {
+            border: 1px solid var(--gray);
+            border-left: 5px solid var(--primary-color);
+            border-radius: 5px;
+            padding: 15px;
+            background-color: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .stat-card .stat-card-content {
+            flex-grow: 1; /* Đẩy button group xuống dưới */
+        }
+        
+        .stat-card.summary {
+            border-left-color: var(--info-color);
+            background-color: #f7fdfd;
+        }
+
+        .stat-card h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        
+        .stat-card p {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+        
+        .stat-card .stat-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px 15px; 
+            font-size: 13px;
+            border-top: 1px dashed var(--gray);
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+        
+        .stat-card .stat-not-paid {
+            color: var(--danger-color);
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-top: 5px;
+        }
+        
+        .stat-card .stat-total-summary {
+            font-weight: bold;
+        }
+        
+        /* Nút Gemini trong thẻ (MỚI) */
+        .stat-card .button-group {
+            justify-content: flex-end;
+            margin-top: 15px; /* Tách biệt khỏi nội dung */
+            border-top: 1px solid var(--light-gray);
+            padding-top: 10px;
+        }
+
+
+        .progress-bar {
+            width: 100%;
+            background-color: var(--gray);
+            border-radius: 5px;
+            height: 22px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+            margin-top: 10px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background-color: var(--success-color);
+            width: 0%; 
+            text-align: center;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            line-height: 22px;
+            transition: width 0.5s ease;
+            white-space: nowrap;
+        }
+        
+        /* --- RESPONSIVE CHO DI ĐỘNG --- */
+        @media (max-width: 768px) {
+            .container {
+                padding: 5px;
+                margin: 5px;
+            }
+            
+            h1 { font-size: 1.5rem; }
+            h2 { font-size: 1.3rem; }
+            
+            .tab-link {
+                padding: 10px 12px;
+                font-size: 0.9rem;
+            }
+            
+            /* Form quản lý lớp stack 1 cột */
+            #class-form {
+                grid-template-columns: 1fr;
+            }
+            
+            #submission-form .form-group-split {
+                flex-direction: column; 
+            }
+            
+            #custom-filter-list {
+                grid-template-columns: 1fr;
+            }
+            
+            .sub-tab-link {
+                font-size: 0.9rem;
+                padding: 8px 10px;
+            }
+            
+            /* Sửa header thống kê trên di động */
+            .section-header {
+                gap: 10px;
+            }
+            .section-header h2 {
+                width: 100%;
+            }
+            .section-header .btn-gemini {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- MODAL FORM LỚP HỌC (MẶC ĐỊNH ẨN) -->
+    <div id="class-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h2 id="modal-title">Cập nhật thông tin Lớp</h2>
+            
+            <form id="class-form">
+                <input type="hidden" id="class-id">
+                
+                <div class="form-group">
+                    <label for="class-grade">Khối:</label>
+                    <input type="text" id="class-grade" required placeholder="Ví dụ: 6, 7, 10...">
+                </div>
+                <div class="form-group">
+                    <label for="class-name-input">Tên Lớp:</label>
+                    <input type="text" id="class-name-input" required placeholder="Ví dụ: 10A1">
+                </div>
+                <div class="form-group">
+                    <label for="class-size">Sĩ số:</label>
+                    <input type="number" id="class-size" required min="0">
+                </div>
+                
+                <div class="form-group">
+                    <label for="class-teacher-input">Tên GVCN:</label>
+                    <input type="text" id="class-teacher-input" required>
+                </div>
+                <!-- Trường mới -->
+                <div class="form-group">
+                    <label for="class-poor">HS Nghèo:</label>
+                    <input type="number" id="class-poor" required min="0" value="0">
+                </div>
+                <div class="form-group">
+                    <label for="class-near-poor">HS Cận nghèo:</label>
+                    <input type="number" id="class-near-poor" required min="0" value="0">
+                </div>
+                <div class="form-group">
+                    <label for="class-supported">HS Hỗ trợ BHYT:</label>
+                    <input type="number" id="class-supported" required min="0" value="0">
+                </div>
+                
+                <div class="form-group form-group-full">
+                    <label for="class-notes">Ghi chú:</label>
+                    <textarea id="class-notes"></textarea>
+                </div>
+                
+                <div class="button-group">
+                    <!-- Nút này là type="submit" của form -->
+                    <button type="submit" id="btn-save-class" class="btn-primary">Lưu</button>
+                    <!-- Nút này type="button" để không submit form -->
+                    <button type="button" id="btn-close-modal" class="btn-secondary">Đóng</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- MODAL HIỂN THỊ KẾT QUẢ GEMINI (MỚI) -->
+    <div id="gemini-modal" class="gemini-modal" style="display: none;">
+        <div class="gemini-modal-content">
+            <h3 id="gemini-modal-title">✨ Kết quả từ AI</h3>
+            <div class="gemini-modal-body">
+                <textarea id="gemini-modal-text" readonly></textarea>
+            </div>
+            <div class="gemini-modal-footer">
+                <button id="btn-close-gemini-modal" class="btn-secondary">Đóng</Dbutton>
+            </div>
+        </div>
+    </div>
+    
+    <!-- LOADING OVERLAY (MỚI) -->
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- NỘI DUNG CHÍNH CỦA TRANG -->
+    <div class="container">
+        <h1>Ứng dụng Quản lý thu BHYT (v7 - Gemini AI)</h1>
+        
+        <!-- THANH ĐIỀU HƯỚNG TAB CHÍNH -->
+        <nav class="tab-nav">
+            <button class="tab-link active" data-tab="tab-classes">Quản lý Lớp học</button>
+            <button class="tab-link" data-tab="tab-update">Cập nhật Đóng tiền</button>
+            <button class="tab-link" data-tab="tab-stats">Thống kê & Báo cáo</button>
+        </nav>
+
+        <!-- NỘI DUNG TAB 1: QUẢN LÝ LỚP HỌC -->
+        <div id="tab-classes" class="tab-content active">
+            <section id="class-management">
+                <h2>Danh sách Lớp học</h2>
+                
+                <!-- Nút để mở Modal Thêm mới -->
+                <button id="btn-show-add-modal" class="btn-primary">Thêm Lớp Mới</button>
+                
+                <div class="table-wrapper">
+                    <table id="class-table">
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Khối</th>
+                                <th>Tên Lớp</th>
+                                <th>Sĩ số</th>
+                                <th>HS Nghèo</th>
+                                <th>HS Cận nghèo</th>
+                                <th>HS Hỗ trợ</th>
+                                <th>GVCN</th>
+                                <th>Ghi chú</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="class-list">
+                            <!-- JS sẽ điền dữ liệu vào đây -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- NỘI DUNG TAB 2: CẬP NHẬT ĐÓNG TIỀN -->
+        <div id="tab-update" class="tab-content">
+            <section id="submission-entry">
+                <h2>Ghi nhận Đóng tiền</h2>
+                <form id="submission-form">
+                    <div>
+                        <label for="sub-class">Chọn Lớp:</label>
+                        <select id="sub-class" required>
+                            <option value="">-- Vui lòng chọn lớp --</option>
+                            <!-- JS sẽ điền danh sách lớp vào đây -->
+                        </select>
+                    </div>
+                    <div class="form-group-split">
+                        <input type="text" id="sub-teacher" disabled placeholder="GVCN">
+                        <input type="text" id="sub-class-size" disabled placeholder="Sĩ số">
+                    </div>
+                    <div>
+                        <label for="sub-students">Số HS đóng (lần này):</label>
+                        <input type="number" id="sub-students" required min="0">
+                    </div>
+                    <div>
+                        <label for="sub-amount">Số tiền (lần này):</label>
+                        <input type="number" id="sub-amount" required min="0">
+                    </div>
+                    <div>
+                        <label for="sub-batch">Đợt:</label>
+                        <input type="text" id="sub-batch" placeholder="Ví dụ: Đợt 1 (2025-2026)">
+                    </div>
+                    <div>
+                        <label for="sub-notes">Ghi chú (nếu có):</label>
+                        <textarea id="sub-notes"></textarea>
+                    </div>
+                    <div class="button-group">
+                        <button type="submit" class="btn-primary">Lưu Ghi nhận</button>
+                    </div>
+                </form>
+            </section>
+            
+            <section id="submission-history">
+                <h2>Lịch sử Đóng tiền</h2>
+                <div class="table-wrapper">
+                    <table id="log-table">
+                        <thead>
+                            <tr>
+                                <th>Thời gian</th>
+                                <th>Lớp</th>
+                                <th>GVCN</th>
+                                <th>Số HS</th>
+                                <th>Số tiền (VNĐ)</th>
+                                <th>Đợt</th>
+                                <th>Ghi chú</th>
+                                <th>Xóa</th>
+                            </tr>
+                        </thead>
+                        <tbody id="log-list">
+                            <!-- JS sẽ điền dữ liệu vào đây -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- NỘI DUNG TAB 3: THỐNG KÊ & BÁO CÁO -->
+        <div id="tab-stats" class="tab-content">
+            <section id="statistics">
+                <div class="section-header">
+                    <h2>Thống kê Tiến độ</h2>
+                    <!-- Nút Gemini Báo cáo Nhanh (MỚI) -->
+                    <button id="btn-gemini-summary" class="btn-gemini">✨ Tạo Báo cáo Nhanh</button>
+                </div>
+                
+                <!-- Tab con cho Thống kê -->
+                <nav class="sub-tab-nav">
+                    <button class="sub-tab-link active" data-subtab="subtab-all">Toàn trường</button>
+                    <button class="sub-tab-link" data-subtab="subtab-6">Khối 6</button>
+                    <button class="sub-tab-link" data-subtab="subtab-7">Khối 7</button>
+                    <button class="sub-tab-link" data-subtab="subtab-8">Khối 8</button>
+                    <button class="sub-tab-link" data-subtab="subtab-9">Khối 9</button>
+                    <button class="sub-tab-link" data-subtab="subtab-10">Khối 10</button>
+                    <button class="sub-tab-link" data-subtab="subtab-11">Khối 11</button>
+                    <button class="sub-tab-link" data-subtab="subtab-12">Khối 12</button>
+                    <button class="sub-tab-link" data-subtab="subtab-custom">Chọn Lớp</button>
+                </nav>
+                
+                <!-- Nội dung các tab con -->
+                <div id="subtab-all" class="sub-tab-content active">
+                    <div class="stats-container-inner">
+                        <!-- JS sẽ điền thẻ Toàn trường + các Khối vào đây -->
+                    </div>
+                </div>
+                
+                <div id="subtab-6" class="sub-tab-content">
+                    <div class="stats-container-inner">
+                        <!-- JS sẽ điền thẻ Tổng Khối 6 + các lớp 6 vào đây -->
+                    </div>
+                </div>
+                
+                <div id="subtab-7" class="sub-tab-content">
+                    <div class="stats-container-inner">
+                        <!-- JS sẽ điền thẻ Tổng Khối 7 + các lớp 7 vào đây -->
+                    </div>
+                </div>
+
+                <div id="subtab-8" class="sub-tab-content">
+                    <div class="stats-container-inner">
+                        <!-- JS sẽ điền thẻ Tổng Khối 8 + các lớp 8 vào đây -->
+                    </div>
+                </div>
+                
+                <div id="subtab-9" class="sub-tab-content">
+                    <div class="stats-container-inner">
+                        <!-- JS sẽ điền thẻ Tổng Khối 9 + các lớp 9 vào đây -->
+                    </div>
+                </div>
+                
+                <div id="subtab-10" class="sub-tab-content">
+                    <div class="stats-container-inner">
+                        <!-- JS sẽ điền thẻ Tổng Khối 10 + các lớp 10 vào đây -->
+                    </div>
+                </div>
+                
+                <div id="subtab-11" class="sub-tab-content">
+                    <div class="stats-container-inner">
+                        <!-- JS sẽ điền thẻ Tổng Khối 11 + các lớp 11 vào đây -->
+                    </div>
+                </div>
+
+                <div id="subtab-12" class="sub-tab-content">
+                    <div class="stats-container-inner">
+                        <!-- JS sẽ điền thẻ Tổng Khối 12 + các lớp 12 vào đây -->
+                    </div>
+                </div>
+                
+                <div id="subtab-custom" class="sub-tab-content">
+                    <div id="custom-filter-controls">
+                        <div id="custom-filter-list">
+                            <!-- JS sẽ điền các checkbox lớp vào đây -->
+                        </div>
+                        <div class="button-group">
+                             <button id="btn-check-all" class="btn-secondary">Chọn tất cả</button>
+                             <button id="btn-uncheck-all" class="btn-secondary">Bỏ chọn tất cả</button>
+                             <button id="btn-apply-custom-filter" class="btn-primary">Xem các lớp đã chọn</button>
+                        </div>
+                    </div>
+                    <div class="stats-container-inner">
+                        <!-- JS sẽ điền các thẻ lớp được chọn vào đây -->
+                    </div>
+                </div>
+
+            </section>
+        </div>
+    </div>
+
+    <!-- PHẦN JAVASCRIPT XỬ LÝ LOGIC -->
+    <script>
+        // --- DỮ LIỆU LỚP HỌC CÓ SẴN (v6) ---
+        // (Lấy từ hình ảnh, 36 lớp Khối 6-12)
+        const initialClassData = [
+            // Khối 6
+            { id: crypto.randomUUID(), grade: "6", name: "6A1", size: 45, teacher: "GVCN 6A1", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            { id: crypto.randomUUID(), grade: "6", name: "6A2", size: 46, teacher: "GVCN 6A2", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            { id: crypto.randomUUID(), grade: "6", name: "6A3", size: 43, teacher: "GVCN 6A3", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            { id: crypto.randomUUID(), grade: "6", name: "6A4", size: 44, teacher: "GVCN 6A4", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            // Khối 7
+            { id: crypto.randomUUID(), grade: "7", name: "7A1", size: 44, teacher: "GVCN 7A1", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            { id: crypto.randomUUID(), grade: "7", name: "7A2", size: 44, teacher: "GVCN 7A2", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            { id: crypto.randomUUID(), grade: "7", name: "7A3", size: 45, teacher: "GVCN 7A3", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            { id: crypto.randomUUID(), grade: "7", name: "7A4", size: 46, teacher: "GVCN 7A4", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            { id: crypto.randomUUID(), grade: "7", name: "7A5", size: 44, teacher: "GVCN 7A5", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            // Khối 8
+            { id: crypto.randomUUID(), grade: "8", name: "8A1", size: 43, teacher: "GVCN 8A1", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            { id: crypto.randomUUID(), grade: "8", name: "8A2", size: 45, teacher: "GVCN 8A2", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            { id: crypto.randomUUID(), grade: "8", name: "8A3", size: 44, teacher: "GVCN 8A3", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            { id: crypto.randomUUID(), grade: "8", name: "8A4", size: 43, teacher: "GVCN 8A4", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            { id: crypto.randomUUID(), grade: "8", name: "8A5", size: 44, teacher: "GVCN 8A5", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            // Khối 9
+            { id: crypto.randomUUID(), grade: "9", name: "9A1", size: 45, teacher: "GVCN 9A1", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            { id: crypto.randomUUID(), grade: "9", name: "9A2", size: 46, teacher: "GVCN 9A2", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            { id: crypto.randomUUID(), grade: "9", name: "9A3", size: 45, teacher: "GVCN 9A3", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            { id: crypto.randomUUID(), grade: "9", name: "9A4", size: 44, teacher: "GVCN 9A4", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            // Khối 10
+            { id: crypto.randomUUID(), grade: "10", name: "10A1", size: 45, teacher: "GVCN 10A1", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            { id: crypto.randomUUID(), grade: "10", name: "10A2", size: 45, teacher: "GVCN 10A2", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            { id: crypto.randomUUID(), grade: "10", name: "10A3", size: 45, teacher: "GVCN 10A3", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            { id: crypto.randomUUID(), grade: "10", name: "10A4", size: 46, teacher: "GVCN 10A4", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            { id: crypto.randomUUID(), grade: "10", name: "10A5", size: 45, teacher: "GVCN 10A5", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            { id: crypto.randomUUID(), grade: "10", name: "10A6", size: 46, teacher: "GVCN 10A6", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            { id: crypto.randomUUID(), grade: "10", name: "10A7", size: 46, teacher: "GVCN 10A7", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            // Khối 11
+            { id: crypto.randomUUID(), grade: "11", name: "11A1", size: 43, teacher: "GVCN 11A1", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            { id: crypto.randomUUID(), grade: "11", name: "11A2", size: 44, teacher: "GVCN 11A2", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            { id: crypto.randomUUID(), grade: "11", name: "11A3", size: 44, teacher: "GVCN 11A3", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            { id: crypto.randomUUID(), grade: "11", name: "11A4", size: 44, teacher: "GVCN 11A4", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            { id: crypto.randomUUID(), grade: "11", name: "11A5", size: 44, teacher: "GVCN 11A5", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            { id: crypto.randomUUID(), grade: "11", name: "11A6", size: 45, teacher: "GVCN 11A6", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            // Khối 12
+            { id: crypto.randomUUID(), grade: "12", name: "12A1", size: 45, teacher: "GVCN 12A1", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            { id: crypto.randomUUID(), grade: "12", name: "12A2", size: 44, teacher: "GVCN 12A2", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            { id: crypto.randomUUID(), grade: "12", name: "12A3", size: 45, teacher: "GVCN 12A3", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            { id: crypto.randomUUID(), grade: "12", name: "12A4", size: 44, teacher: "GVCN 12A4", notes: "", poor: 0, nearPoor: 0, supported: 0 },
+            { id: crypto.randomUUID(), grade: "12", name: "12A5", size: 44, teacher: "GVCN 12A5", notes: "", poor: 0, nearPoor: 0, supported: 0 }
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- KHAI BÁO BIẾN VÀ DOM ELEMENTS ---
+            
+            let classes = [];
+            let submissions = [];
+            let editingClassId = null;
+
+            // --- CẤU HÌNH API GEMINI (MỚI) ---
+            const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=`;
+            const apiKey = ""; // API key sẽ được cung cấp tự động trong môi trường Canvas
+            
+            const CLASSES_STORAGE_KEY = 'bhyt_classes_storage_v6'; // Giữ v6 để tương thích
+            const SUBMISSIONS_STORAGE_KEY = 'bhyt_submissions_storage_v6';
+            
+            // DOM Elements: Tabs chính
+            const tabNav = document.querySelector('.tab-nav');
+            const tabLinks = document.querySelectorAll('.tab-link');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            // DOM Elements: Modal Lớp học
+            const classModal = document.getElementById('class-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const btnShowAddModal = document.getElementById('btn-show-add-modal');
+            const btnCloseModal = document.getElementById('btn-close-modal');
+            
+            // DOM Elements: Form Lớp học
+            const classForm = document.getElementById('class-form');
+            const classIdInput = document.getElementById('class-id');
+            const classGradeInput = document.getElementById('class-grade');
+            const classNameInput = document.getElementById('class-name-input');
+            const classSizeInput = document.getElementById('class-size');
+            const classTeacherInput = document.getElementById('class-teacher-input');
+            const classPoorInput = document.getElementById('class-poor');
+            const classNearPoorInput = document.getElementById('class-near-poor');
+            const classSupportedInput = document.getElementById('class-supported');
+            const classNotesInput = document.getElementById('class-notes');
+            const classListTbody = document.getElementById('class-list');
+
+            // DOM Elements: Ghi nhận đóng tiền
+            const submissionForm = document.getElementById('submission-form');
+            const subClassSelect = document.getElementById('sub-class');
+            const subTeacherInput = document.getElementById('sub-teacher');
+            const subClassSizeInput = document.getElementById('sub-class-size');
+            const subStudentsInput = document.getElementById('sub-students');
+            const subAmountInput = document.getElementById('sub-amount');
+            const subBatchInput = document.getElementById('sub-batch');
+            const subNotesInput = document.getElementById('sub-notes');
+
+            // DOM Elements: Lịch sử
+            const logListTbody = document.getElementById('log-list');
+            
+            // DOM Elements: Thống kê
+            const statisticsSection = document.getElementById('statistics'); // (MỚI)
+            const subTabNav = document.querySelector('.sub-tab-nav');
+            const subTabLinks = document.querySelectorAll('.sub-tab-link');
+            const subTabContents = document.querySelectorAll('.sub-tab-content');
+            const customFilterList = document.getElementById('custom-filter-list');
+            const btnCheckAll = document.getElementById('btn-check-all');
+            const btnUncheckAll = document.getElementById('btn-uncheck-all');
+            const btnApplyCustomFilter = document.getElementById('btn-apply-custom-filter');
+
+            // DOM Elements: Gemini (MỚI)
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const geminiModal = document.getElementById('gemini-modal');
+            const geminiModalTitle = document.getElementById('gemini-modal-title');
+            const geminiModalText = document.getElementById('gemini-modal-text');
+            const btnCloseGeminiModal = document.getElementById('btn-close-gemini-modal');
+            const btnGeminiSummary = document.getElementById('btn-gemini-summary');
+
+            // --- CÁC HÀM XỬ LÝ DỮ LIỆU (LOCAL STORAGE) ---
+
+            function loadData() {
+                const storedClasses = localStorage.getItem(CLASSES_STORAGE_KEY);
+                // Kiểm tra xem dữ liệu cũ có phải là của v5 (18 lớp) không, nếu vậy thì ép nạp v6 (36 lớp)
+                let oldDataIsV5 = false;
+                if (storedClasses) {
+                    const tempClasses = JSON.parse(storedClasses);
+                    if (tempClasses.length < 30) { // Giả định v5 có 18 lớp
+                         oldDataIsV5 = true;
+                    }
+                }
+
+                if (storedClasses && !oldDataIsV5) {
+                    classes = JSON.parse(storedClasses);
+                    classes = classes.map(cls => ({
+                        ...cls,
+                        poor: cls.poor || 0,
+                        nearPoor: cls.nearPoor || 0,
+                        supported: cls.supported || 0
+                    }));
+                } else {
+                    // Nếu không có dữ liệu, hoặc dữ liệu là của v5, nạp dữ liệu v6
+                    classes = initialClassData;
+                    saveClasses();
+                }
+                submissions = JSON.parse(localStorage.getItem(SUBMISSIONS_STORAGE_KEY)) || [];
+            }
+
+            function saveClasses() {
+                localStorage.setItem(CLASSES_STORAGE_KEY, JSON.stringify(classes));
+            }
+
+            function saveSubmissions() {
+                localStorage.setItem(SUBMISSIONS_STORAGE_KEY, JSON.stringify(submissions));
+            }
+            
+            // --- CÁC HÀM HỖ TRỢ GEMINI (MỚI) ---
+            
+            function showLoading(isLoading) {
+                loadingOverlay.style.display = isLoading ? 'flex' : 'none';
+            }
+            
+            function showGeminiModal(title, text) {
+                geminiModalTitle.textContent = title;
+                geminiModalText.value = text;
+                geminiModal.style.display = 'flex';
+            }
+            
+            function hideGeminiModal() {
+                geminiModal.style.display = 'none';
+            }
+            
+            /**
+             * Gọi API Gemini với exponential backoff
+             * @param {string} prompt - Câu lệnh cho mô hình
+             * @param {string} systemInstruction - Hướng dẫn hệ thống
+             * @param {number} retries - Số lần thử lại
+             * @param {number} delay - Thời gian chờ (ms)
+             * @returns {Promise<string>} - Văn bản trả về
+             */
+            async function callGeminiAPI(prompt, systemInstruction, retries = 3, delay = 1000) {
+                const payload = {
+                    contents: [{ parts: [{ text: prompt }] }],
+                    systemInstruction: {
+                        parts: [{ text: systemInstruction }]
+                    },
+                };
+
+                try {
+                    const response = await fetch(GEMINI_API_URL + apiKey, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(payload),
+                    });
+
+                    if (!response.ok) {
+                        // Thử lại nếu gặp lỗi server (5xx)
+                        if (response.status >= 500 && retries > 0) {
+                            await new Promise(res => setTimeout(res, delay));
+                            return callGeminiAPI(prompt, systemInstruction, retries - 1, delay * 2);
+                        }
+                        throw new Error(`Lỗi API: ${response.status} ${response.statusText}`);
+                    }
+
+                    const result = await response.json();
+                    
+                    if (result.candidates && result.candidates[0].content && result.candidates[0].content.parts[0].text) {
+                        return result.candidates[0].content.parts[0].text;
+                    } else {
+                        throw new Error("Không nhận được nội dung hợp lệ từ API.");
+                    }
+                } catch (error) {
+                    console.error("Lỗi khi gọi Gemini API:", error);
+                    // Thử lại nếu lỗi mạng và còn số lần thử
+                    if (retries > 0) {
+                        await new Promise(res => setTimeout(res, delay));
+                        return callGeminiAPI(prompt, systemInstruction, retries - 1, delay * 2);
+                    }
+                    return "Đã xảy ra lỗi khi kết nối đến AI. Vui lòng thử lại sau.";
+                }
+            }
+
+
+            // --- LOGIC XỬ LÝ TAB CHÍNH ---
+            tabNav.addEventListener('click', (e) => {
+                const clickedTab = e.target.closest('.tab-link');
+                if (!clickedTab) return;
+                
+                e.preventDefault();
+                const tabId = clickedTab.dataset.tab;
+
+                tabLinks.forEach(link => link.classList.remove('active'));
+                tabContents.forEach(content => content.classList.remove('active'));
+
+                clickedTab.classList.add('active');
+                document.getElementById(tabId).classList.add('active');
+                
+                if (tabId === 'tab-stats') {
+                    renderStatistics();
+                }
+            });
+
+            // --- LOGIC XỬ LÝ TAB CON (THỐNG KÊ) ---
+            subTabNav.addEventListener('click', (e) => {
+                const clickedTab = e.target.closest('.sub-tab-link');
+                if (!clickedTab) return;
+                
+                e.preventDefault();
+                const subTabId = clickedTab.dataset.subtab;
+
+                subTabLinks.forEach(link => link.classList.remove('active'));
+                subTabContents.forEach(content => content.classList.remove('active'));
+
+                clickedTab.classList.add('active');
+                document.getElementById(subTabId).classList.add('active');
+                
+                if (subTabId !== 'subtab-custom') {
+                    renderStatistics();
+                }
+            });
+
+            // --- CÁC HÀM HIỂN THỊ (RENDER) ---
+
+            // 1. Hiển thị danh sách lớp ra bảng
+            function renderClassTable() {
+                classListTbody.innerHTML = '';
+                if (classes.length === 0) {
+                    classListTbody.innerHTML = '<tr><td colspan="10" style="text-align: center;">Chưa có lớp nào.</td></tr>';
+                    return;
+                }
+                
+                const sortedClasses = [...classes].sort((a, b) => {
+                    if (a.grade !== b.grade) return a.grade.localeCompare(b.grade, undefined, { numeric: true });
+                    return a.name.localeCompare(b.name, undefined, { numeric: true });
+                });
+
+                sortedClasses.forEach((cls, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${cls.grade}</td>
+                        <td>${cls.name}</td>
+                        <td>${cls.size}</td>
+                        <td>${cls.poor}</td>
+                        <td>${cls.nearPoor}</td>
+                        <td>${cls.supported}</td>
+                        <td>${cls.teacher}</td>
+                        <td class="col-notes">${cls.notes || ''}</td>
+                        <td class="action-buttons">
+                            <button class="btn-success" data-id="${cls.id}">Sửa</button>
+                            <button class="btn-danger" data-id="${cls.id}">Xóa</button>
+                        </td>
+                    `;
+                    classListTbody.appendChild(row);
+                });
+            }
+
+            // 2. Hiển thị danh sách lớp vào dropdown
+            function renderClassDropdown() {
+                subClassSelect.innerHTML = '<option value="">-- Vui lòng chọn lớp --</option>';
+                const sortedClasses = [...classes].sort((a, b) => {
+                    if (a.grade !== b.grade) return a.grade.localeCompare(b.grade, undefined, { numeric: true });
+                    return a.name.localeCompare(b.name, undefined, { numeric: true });
+                });
+                
+                sortedClasses.forEach(cls => {
+                    const option = document.createElement('option');
+                    option.value = cls.id;
+                    option.textContent = `[${cls.grade}] ${cls.name} (${cls.teacher})`;
+                    option.dataset.teacher = cls.teacher;
+                    option.dataset.size = cls.size; 
+                    subClassSelect.appendChild(option);
+                });
+            }
+
+            // 3. Hiển thị danh sách checkbox (trong tab 'Chọn Lớp')
+            function renderCustomCheckboxList() {
+                customFilterList.innerHTML = '';
+                const sortedClasses = [...classes].sort((a, b) => {
+                    if (a.grade !== b.grade) return a.grade.localeCompare(b.grade, undefined, { numeric: true });
+                    return a.name.localeCompare(b.name, undefined, { numeric: true });
+                });
+                sortedClasses.forEach(cls => {
+                    customFilterList.innerHTML += `
+                        <div>
+                            <input type="checkbox" id="chk-cls-${cls.id}" data-class-id="${cls.id}">
+                            <label for="chk-cls-${cls.id}">[${cls.grade}] ${cls.name}</label>
+                        </div>
+                    `;
+                });
+            }
+            
+            // 4. Hiển thị lịch sử đóng tiền
+            function renderSubmissionLog() {
+                logListTbody.innerHTML = '';
+                if (submissions.length === 0) {
+                    logListTbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Chưa có lịch sử nộp tiền.</td></tr>';
+                    return;
+                }
+                const sortedSubmissions = [...submissions].reverse();
+                sortedSubmissions.forEach(sub => {
+                    const row = document.createElement('tr');
+                    const timestamp = new Date(sub.timestamp).toLocaleString('vi-VN');
+                    const amount = sub.amount.toLocaleString('vi-VN');
+                    
+                    row.innerHTML = `
+                        <td>${timestamp}</td>
+                        <td>${sub.className}</td>
+                        <td>${sub.teacherName}</td>
+                        <td>${sub.studentCount}</td>
+                        <td>${amount}</td>
+                        <td>${sub.batch || ''}</td>
+                        <td class="col-notes">${sub.notes || ''}</td>
+                        <td class="action-buttons">
+                            <button class="btn-danger" data-id="${sub.id}">Xóa</button>
+                        </td>
+                    `;
+                    logListTbody.appendChild(row);
+                });
+            }
+
+            // 5. Hàm tính toán dữ liệu thống kê
+            function calculateStats() {
+                let stats = { 
+                    total: { size: 0, paid: 0, amount: 0, submissions: 0, poor: 0, nearPoor: 0, supported: 0 }, 
+                    grades: {}, 
+                    classes: {} 
+                };
+
+                // 1. Khởi tạo từ danh sách lớp
+                classes.forEach(cls => {
+                    const grade = cls.grade;
+                    
+                    stats.classes[cls.id] = { 
+                        id: cls.id, name: cls.name, grade: grade, 
+                        size: cls.size, poor: cls.poor, nearPoor: cls.nearPoor, supported: cls.supported,
+                        paid: 0, amount: 0, teacher: cls.teacher, submissions: 0
+                    };
+                    
+                    if (!stats.grades[grade]) {
+                        stats.grades[grade] = { size: 0, paid: 0, amount: 0, submissions: 0, poor: 0, nearPoor: 0, supported: 0 };
+                    }
+                    
+                    stats.grades[grade].size += cls.size;
+                    stats.grades[grade].poor += cls.poor;
+                    stats.grades[grade].nearPoor += cls.nearPoor;
+                    stats.grades[grade].supported += cls.supported;
+                    
+                    stats.total.size += cls.size;
+                    stats.total.poor += cls.poor;
+                    stats.total.nearPoor += cls.nearPoor;
+                    stats.total.supported += cls.supported;
+                });
+
+                // 2. Cộng dồn từ danh sách nộp tiền
+                submissions.forEach(sub => {
+                    const classId = sub.classId;
+                    if (stats.classes[classId]) {
+                        const grade = stats.classes[classId].grade;
+                        stats.classes[classId].paid += sub.studentCount;
+                        stats.classes[classId].amount += sub.amount;
+                        stats.classes[classId].submissions += 1;
+                        
+                        if (stats.grades[grade]) {
+                            stats.grades[grade].paid += sub.studentCount;
+                            stats.grades[grade].amount += sub.amount;
+                            stats.grades[grade].submissions += 1;
+                        }
+                    }
+                    stats.total.paid += sub.studentCount;
+                    stats.total.amount += sub.amount;
+                    stats.total.submissions += 1;
+                });
+                return stats;
+            }
+            
+            // --- HÀM TÍNH TOÁN SỐ LIỆU THẺ (MỚI) ---
+            // Tách riêng logic tính toán để tái sử dụng cho Gemini
+            function getCardCalculations(data) {
+                const size = data.size || 0;
+                const paid = data.paid || 0; 
+                const poor = data.poor || 0;
+                const nearPoor = data.nearPoor || 0;
+                const supported = data.supported || 0;
+                const amount = data.amount || 0;
+                const totalExempt = poor + nearPoor + supported;
+                const totalConsideredPaid = paid + totalExempt;
+                let notYetPaid = size - totalConsideredPaid;
+                notYetPaid = Math.max(0, notYetPaid); 
+                const percentage = (size > 0) ? (totalConsideredPaid / size) * 100 : 0;
+                const displayPercentage = Math.min(percentage, 100);
+                
+                return { size, paid, poor, nearPoor, supported, amount, totalExempt, totalConsideredPaid, notYetPaid, percentage, displayPercentage };
+            }
+
+            // 6. Hàm tạo một thẻ thống kê (Cập nhật để dùng Nút Gemini)
+            function createStatCard(title, data, isSummary = false) {
+                const card = document.createElement('div');
+                card.className = 'stat-card' + (isSummary ? ' summary' : '');
+                
+                // Lấy số liệu đã tính
+                const { size, paid, poor, nearPoor, supported, amount, 
+                        totalConsideredPaid, notYetPaid, percentage, displayPercentage } = getCardCalculations(data);
+                
+                // Nút Gemini (chỉ thêm cho thẻ lớp, không thêm cho thẻ tóm tắt)
+                let geminiButton = '';
+                if (!isSummary) {
+                    geminiButton = `
+                        <div class="button-group">
+                            <button class="btn-gemini btn-gemini-reminder" data-class-id="${data.id}">✨ Soạn nhắc nhở GVCN</button>
+                        </div>
+                    `;
+                }
+
+                card.innerHTML = `
+                    <div class="stat-card-content">
+                        <h3>${title}</h3>
+                        ${data.teacher ? `<p><strong>GVCN:</strong> ${data.teacher}</p>` : ''}
+                        <p class="stat-total-summary">
+                            Tổng hoàn thành: ${totalConsideredPaid} / ${size} (HS)
+                        </p>
+                        <div class="progress-bar" title="${percentage.toFixed(1)}% (${totalConsideredPaid}/${size})">
+                            <div class="progress-bar-fill" style="width: ${displayPercentage.toFixed(1)}%;">
+                                ${percentage.toFixed(1)}%
+                            </div>
+                        </div>
+                        <p class="stat-not-paid">
+                            Số HS chưa đóng: ${notYetPaid}
+                        </p>
+                        <div class="stat-details">
+                            <span><strong>Sĩ số:</strong> ${size}</span>
+                            <span><strong>HS đã đóng (thực tế):</strong> ${paid}</span>
+                            <span><strong>HS Nghèo:</strong> ${poor}</span>
+                            <span><strong>HS Cận nghèo:</strong> ${nearPoor}</span>
+                            <span><strong>HS Hỗ trợ BHYT:</strong> ${supported}</span>
+                            <span><strong>Tổng tiền đã nộp:</strong> ${amount.toLocaleString('vi-VN')} VNĐ</span>
+                        </div>
+                    </div>
+                    ${geminiButton}
+                `;
+                return card;
+            }
+
+            // 7. Hiển thị thống kê
+            function renderStatistics() {
+                const statsData = calculateStats();
+                
+                const activeSubTab = document.querySelector('.sub-tab-content.active');
+                if (!activeSubTab) return; 
+                
+                const activeSubTabId = activeSubTab.id;
+                const container = activeSubTab.querySelector('.stats-container-inner');
+                if (!container) return;
+                
+                container.innerHTML = ''; 
+                
+                if (activeSubTabId === 'subtab-all') {
+                    container.appendChild(createStatCard('Toàn trường', statsData.total, true));
+                    Object.keys(statsData.grades).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })).forEach(grade => {
+                        container.appendChild(createStatCard(`Khối ${grade}`, statsData.grades[grade], true));
+                    });
+                } 
+                else if (activeSubTabId.startsWith('subtab-')) { 
+                    const gradeFilter = activeSubTabId.replace('subtab-', '');
+                    
+                    const gradeData = statsData.grades[gradeFilter];
+                    if (gradeData) {
+                        container.appendChild(createStatCard(`Tổng Khối ${gradeFilter}`, gradeData, true));
+                    }
+                    
+                    Object.values(statsData.classes)
+                        .filter(classData => classData.grade === gradeFilter)
+                        .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
+                        .forEach(classData => {
+                            container.appendChild(createStatCard(`Lớp ${classData.name}`, classData, false));
+                        });
+                }
+            }
+            
+            // 8. Hàm tổng hợp
+            function renderAll() {
+                renderClassTable();
+                renderClassDropdown();
+                renderSubmissionLog();
+                renderCustomCheckboxList(); 
+                renderStatistics(); 
+            }
+
+            // --- CÁC HÀM XỬ LÝ SỰ KIỆN ---
+
+            // 1. Mở Modal (Thêm mới)
+            btnShowAddModal.addEventListener('click', () => {
+                resetClassForm(); 
+                modalTitle.textContent = "Thêm Lớp Mới";
+                classModal.style.display = 'flex';
+            });
+
+            // 2. Đóng Modal Lớp học
+            function closeModal() {
+                classModal.style.display = 'none';
+            }
+            btnCloseModal.addEventListener('click', closeModal);
+            
+            // 3. Đóng Modal Gemini (MỚI)
+            btnCloseGeminiModal.addEventListener('click', hideGeminiModal);
+
+            // 4. Reset form (chỉ xóa dữ liệu)
+            function resetClassForm() {
+                editingClassId = null; 
+                classForm.reset(); 
+                classIdInput.value = '';
+                classPoorInput.value = '0';
+                classNearPoorInput.value = '0';
+                classSupportedInput.value = '0';
+                classSizeInput.value = '';
+                classGradeInput.value = '';
+                classNameInput.value = '';
+                classTeacherInput.value = '';
+                classNotesInput.value = '';
+            }
+            
+            // 5. Xử lý Thêm / Cập nhật Lớp (Submit Form trong Modal)
+            classForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const grade = classGradeInput.value.trim();
+                const name = classNameInput.value.trim();
+                const size = parseInt(classSizeInput.value);
+                const teacher = classTeacherInput.value.trim();
+                const poor = parseInt(classPoorInput.value) || 0;
+                const nearPoor = parseInt(classNearPoorInput.value) || 0;
+                const supported = parseInt(classSupportedInput.value) || 0;
+                const notes = classNotesInput.value.trim();
+                
+                if (!grade || !name || !teacher || isNaN(size) || size <= 0) {
+                    alert('Vui lòng nhập đầy đủ Khối, Tên Lớp, Sĩ số (>0) và Tên GVCN.');
+                    return;
+                }
+                
+                if (size < (poor + nearPoor + supported)) {
+                    alert('Tổng số HS Nghèo, Cận nghèo, Hỗ trợ không thể lớn hơn Sĩ số lớp.');
+                    return;
+                }
+                
+                if (editingClassId) { 
+                    const classIndex = classes.findIndex(cls => cls.id === editingClassId);
+                    if (classIndex > -1) {
+                        classes[classIndex] = { ...classes[classIndex], grade, name, size, teacher, poor, nearPoor, supported, notes };
+                    }
+                } else { 
+                    const newClass = { id: crypto.randomUUID(), grade, name, size, teacher, poor, nearPoor, supported, notes };
+                    classes.push(newClass);
+                }
+                
+                saveClasses();
+                renderAll(); 
+                closeModal(); 
+            });
+
+            // 6. Xử lý "Sửa" hoặc "Xóa" trong bảng Lớp
+            classListTbody.addEventListener('click', (e) => {
+                const target = e.target;
+                const id = target.dataset.id;
+                
+                if (target.classList.contains('btn-danger')) {
+                    if (confirm('Bạn có chắc chắn muốn xóa lớp này?\n(Lịch sử nộp tiền cũ VẪN ĐƯỢC GIỮ LẠI trong thống kê tổng)')) {
+                        classes = classes.filter(cls => cls.id !== id);
+                        saveClasses();
+                        renderAll();
+                    }
+                } else if (target.classList.contains('btn-success')) {
+                    const classToEdit = classes.find(cls => cls.id === id);
+                    if (classToEdit) {
+                        editingClassId = id; 
+                        
+                        classIdInput.value = id;
+                        classGradeInput.value = classToEdit.grade;
+                        classNameInput.value = classToEdit.name;
+                        classSizeInput.value = classToEdit.size;
+                        classTeacherInput.value = classToEdit.teacher;
+                        classPoorInput.value = classToEdit.poor;
+                        classNearPoorInput.value = classToEdit.nearPoor;
+                        classSupportedInput.value = classToEdit.supported;
+                        classNotesInput.value = classToEdit.notes || '';
+                        
+                        modalTitle.textContent = `Sửa thông tin Lớp ${classToEdit.name}`;
+                        classModal.style.display = 'flex';
+                    }
+                }
+            });
+
+            // 7. Tự động điền GVCN và Sĩ số khi chọn Lớp
+            subClassSelect.addEventListener('change', (e) => {
+                const selectedOption = e.target.options[e.target.selectedIndex];
+                subTeacherInput.value = selectedOption.dataset.teacher || '';
+                subClassSizeInput.value = selectedOption.dataset.size ? `Sĩ số: ${selectedOption.dataset.size}` : '';
+            });
+
+            // 8. Xử lý Ghi nhận Đóng tiền
+            submissionForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const classId = subClassSelect.value;
+                const studentCount = parseInt(subStudentsInput.value);
+                const amount = parseInt(subAmountInput.value);
+                
+                if (!classId) { alert('Vui lòng chọn một lớp.'); return; }
+                if (isNaN(studentCount) || studentCount <= 0 || isNaN(amount) || amount <= 0) {
+                    alert('Số học sinh và số tiền phải là số dương.'); return;
+                }
+                const selectedClass = classes.find(cls => cls.id === classId);
+                if (!selectedClass) { alert('Lỗi: Không tìm thấy lớp.'); return; }
+
+                const newSubmission = {
+                    id: crypto.randomUUID(),
+                    timestamp: new Date().toISOString(),
+                    classId: classId,
+                    className: selectedClass.name,
+                    teacherName: selectedClass.teacher,
+                    studentCount: studentCount,
+                    amount: amount,
+                    batch: subBatchInput.value.trim() || '',
+                    notes: subNotesInput.value.trim() || ''
+                };
+                
+                submissions.push(newSubmission);
+                saveSubmissions();
+                renderSubmissionLog(); 
+                renderStatistics(); 
+                
+                submissionForm.reset();
+                subTeacherInput.value = '';
+                subClassSizeInput.value = '';
+                
+                alert('Đã lưu ghi nhận thành công!');
+            });
+            
+            // 9. Xử lý Xóa lịch sử đóng tiền
+            logListTbody.addEventListener('click', (e) => {
+                const target = e.target;
+                if (target.classList.contains('btn-danger')) {
+                    const id = target.dataset.id;
+                    if (confirm('Bạn có chắc chắn muốn xóa mục lịch sử này?')) {
+                        submissions = submissions.filter(sub => sub.id !== id);
+                        saveSubmissions();
+                        renderSubmissionLog();
+                        renderStatistics(); 
+                    }
+                }
+            });
+            
+            // 10. Các nút trong bộ lọc tùy chọn (tab "Chọn Lớp")
+            btnCheckAll.addEventListener('click', () => {
+                customFilterList.querySelectorAll('input[type="checkbox"]').forEach(chk => chk.checked = true);
+            });
+            
+            btnUncheckAll.addEventListener('click', () => {
+                customFilterList.querySelectorAll('input[type="checkbox"]').forEach(chk => chk.checked = false);
+            });
+            
+            btnApplyCustomFilter.addEventListener('click', () => {
+                const selectedIds = [];
+                customFilterList.querySelectorAll('input[type="checkbox"]:checked').forEach(chk => {
+                    selectedIds.push(chk.dataset.classId);
+                });
+                
+                const container = document.querySelector('#subtab-custom .stats-container-inner');
+                if (!container) return;
+                
+                container.innerHTML = ''; 
+                
+                if (selectedIds.length === 0) {
+                     container.innerHTML = '<p>Vui lòng chọn ít nhất một lớp.</p>';
+                     return;
+                }
+                
+                const statsData = calculateStats();
+                const selectedClasses = selectedIds.map(id => statsData.classes[id])
+                    .filter(Boolean) 
+                    .sort((a, b) => {
+                        if (a.grade !== b.grade) return a.grade.localeCompare(b.grade, undefined, { numeric: true });
+                        return a.name.localeCompare(b.name, undefined, { numeric: true });
+                    });
+                    
+                 selectedClasses.forEach(classData => {
+                    container.appendChild(createStatCard(`Lớp ${classData.name}`, classData, false));
+                 });
+            });
+
+            // --- SỰ KIỆN GEMINI (MỚI) ---
+
+            // 11. Nút "Báo cáo Nhanh"
+            btnGeminiSummary.addEventListener('click', async () => {
+                showLoading(true);
+                
+                const statsData = calculateStats();
+                const activeSubTab = document.querySelector('.sub-tab-link.active');
+                const activeSubTabId = activeSubTab ? activeSubTab.dataset.subtab : 'subtab-all';
+                let title = "Toàn trường";
+                let dataToSummarize = statsData.total;
+                
+                if (activeSubTabId.startsWith('subtab-') && activeSubTabId !== 'subtab-custom' && activeSubTabId !== 'subtab-all') {
+                    const gradeFilter = activeSubTabId.replace('subtab-', '');
+                    title = `Khối ${gradeFilter}`;
+                    dataToSummarize = statsData.grades[gradeFilter] || { size: 0, paid: 0, poor: 0, nearPoor: 0, supported: 0 };
+                } else {
+                    // Mặc định là 'Toàn trường'
+                    title = "Toàn trường";
+                    dataToSummarize = statsData.total;
+                }
+
+                const { size, paid, totalExempt, notYetPaid, percentage } = getCardCalculations(dataToSummarize);
+                
+                const prompt = `
+                    Dưới đây là dữ liệu thu BHYT cho phạm vi "${title}":
+                    - Tổng sĩ số: ${size}
+                    - Số HS đã đóng (thực tế): ${paid}
+                    - Số HS miễn/hỗ trợ (Nghèo, Cận nghèo, Hỗ trợ): ${totalExempt}
+                    - Số HS chưa đóng: ${notYetPaid}
+                    - Tỷ lệ hoàn thành: ${percentage.toFixed(1)}%
+
+                    Hãy viết một bản tóm tắt báo cáo ngắn gọn (khoảng 2-3 câu, bằng tiếng Việt) về tình hình này.
+                `;
+                const systemInstruction = "Bạn là trợ lý quản lý trường học. Viết một bản tóm tắt súc tích, chuyên nghiệp (bằng tiếng Việt) về tình hình thu BHYT dựa trên dữ liệu được cung cấp.";
+
+                const summaryText = await callGeminiAPI(prompt, systemInstruction);
+                
+                showLoading(false);
+                showGeminiModal(`Báo cáo Nhanh: ${title}`, summaryText);
+            });
+
+            // 12. Nút "Soạn nhắc nhở" (dùng ủy quyền sự kiện)
+            statisticsSection.addEventListener('click', async (e) => {
+                const target = e.target.closest('.btn-gemini-reminder');
+                if (!target) return;
+                
+                showLoading(true);
+                
+                const classId = target.dataset.classId;
+                const statsData = calculateStats();
+                const classData = statsData.classes[classId];
+                
+                if (!classData) {
+                    showLoading(false);
+                    alert("Lỗi: Không tìm thấy dữ liệu lớp.");
+                    return;
+                }
+                
+                const { size, notYetPaid, teacher } = getCardCalculations(classData);
+                
+                if (notYetPaid === 0) {
+                    showLoading(false);
+                    showGeminiModal("Hoàn tất", "Lớp này đã hoàn thành 100%. Không cần gửi nhắc nhở.");
+                    return;
+                }
+                
+                const prompt = `
+                    Lớp ${classData.name} (GVCN: ${teacher}) còn ${notYetPaid} em chưa hoàn thành BHYT trên sĩ số ${size}.
+                    Hãy viết một tin nhắn Zalo/SMS ngắn gọn, lịch sự (bằng tiếng Việt) gửi cho GVCN là "${teacher}" để đôn đốc các em còn lại.
+                    Bắt đầu bằng "Chào cô/thầy [Tên GVCN]," và kết thúc bằng "Cảm ơn cô/thầy!".
+                `;
+                const systemInstruction = "Bạn là trợ lý quản lý trường học, chuyên soạn thảo thông báo nội bộ cho giáo viên. Viết bằng tiếng Việt, giọng điệu thân thiện nhưng chuyên nghiệp.";
+                
+                const reminderText = await callGeminiAPI(prompt, systemInstruction);
+                
+                showLoading(false);
+                showGeminiModal(`Dự thảo tin nhắn cho GVCN lớp ${classData.name}`, reminderText);
+            });
+
+
+            // --- KHỞI CHẠY ỨNG DỤNG ---
+            loadData();
+            renderAll();
+        });
+    </script>
+
+</body>
+</html>
+
+
