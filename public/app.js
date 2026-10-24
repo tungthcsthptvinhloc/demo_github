@@ -159,6 +159,9 @@ function safeFileName(name) {
 // Tải lần lượt các file lên kho (Vercel Blob, hoặc thư mục .devdata khi chạy thử),
 // trả về danh sách { url, name, size, type } để gửi kèm biểu mẫu.
 async function uploadFiles(files, bar) {
+  if (files.length && state.storage === 'missing') {
+    throw new Error('Chưa kết nối kho Vercel Blob nên chưa gửi được file. Giáo viên cần vào Vercel → Storage gắn kho Blob rồi Redeploy.');
+  }
   const prefix = state.user.role === 'teacher' ? 'task/' : `sub/${state.user.id}/`;
   const total = files.reduce((sum, f) => sum + f.size, 0) || 1;
   let done = 0;

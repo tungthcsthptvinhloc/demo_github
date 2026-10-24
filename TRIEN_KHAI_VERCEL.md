@@ -89,9 +89,19 @@ Khi có file mã mới (ví dụ `public/app.js`):
 
 ## Khi gặp lỗi
 
+**Kiểm tra nhanh:** mở `https://<địa-chỉ-ứng-dụng>/api/health`. Trang hiện ba dòng:
+
+```
+{"database":"ok","blob":"ok","setup_code":"đã đặt"}
+```
+
+Dòng nào báo `LỖI` thì xem bảng dưới.
+
 | Hiện tượng | Nguyên nhân thường gặp |
 |---|---|
-| Trang báo "Lỗi máy chủ" | Chưa gắn Neon (B2) hoặc chưa Redeploy (B5). Xem chi tiết ở tab **Logs** của dự án. |
+| `database` báo LỖI, hoặc trang báo "Chưa kết nối cơ sở dữ liệu Neon" | Chưa gắn Neon (B2) hoặc chưa Redeploy (B5). Vào **Settings → Environment Variables**, kiểm tra có biến chứa `DATABASE_URL` không. |
+| `blob` báo LỖI | Chưa gắn kho Blob (B3) hoặc chưa Redeploy. |
+| Trang báo "Lỗi máy chủ" | Xem chi tiết ở tab **Logs** của dự án. |
 | "Chưa đặt biến môi trường SETUP_CODE" | Thêm biến ở **Settings → Environment Variables** rồi Redeploy. |
 | Không tải được ảnh/file | Chưa gắn Blob (B3), kho Blob không phải *Public*, hoặc chưa Redeploy. |
 | Vercel báo lỗi khi Deploy | Kiểm tra đã tải lên đủ file ở bước A5, nhất là `package.json`, `package-lock.json`, `vercel.json` và thư mục `api`. |
