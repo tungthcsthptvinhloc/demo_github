@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quản lý nhiệm vụ HSG</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📘</text></svg>">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" crossorigin="anonymous">
+  <link rel="stylesheet" href="/app.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+  <script defer src="/vendor/vercel-blob-client.js"></script>
+  <script defer src="/app.js"></script>
+</head>
+<body>
+  <header id="topbar" hidden>
+    <div class="topbar-inner">
+      <a class="brand" href="#/"><span class="brand-icon">📘</span><span id="team-name"></span></a>
+      <nav id="nav"></nav>
+      <div class="user-box">
+        <span id="user-name"></span>
+        <button class="btn btn-ghost btn-sm" id="logout-btn">Đăng xuất</button>
+      </div>
+    </div>
+  </header>
+  <main id="view"><p class="muted center">Đang tải...</p></main>
+  <div id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
